@@ -80,9 +80,9 @@ func menuKelola(A *DaftarAssessment, n *int, status *string) {
 		} else if pil == 3 {
 			hapusAssessment(A, n)
 		} else if pil == 4 {
-			cariAssessment(*A, *n)
+			menuPencarian(*A, *n) // Menggunakan menu pencarian baru
 		} else if pil == 5 {
-			urutkanAssessment(A, *n)
+			menuPengurutan(A, *n) // Menggunakan menu pengurutan baru
 		} else if pil == 6 {
 			break
 		}
@@ -199,22 +199,99 @@ func hapusAssessment(A *DaftarAssessment, n *int) {
 	}
 }
 
-func cariAssessment(A DaftarAssessment, n int) {
-	var target int
+func menuPencarian(A DaftarAssessment, n int) {
+	var metode, target int
+	fmt.Printf("\n%-35sPilih Metode Pencarian:\n", "")
+	fmt.Printf("%-35s[1] Sequential Search (Bisa cari data duplikat User ID)\n", "")
+	fmt.Printf("%-35s[2] Binary Search (Harus diurutkan dulu otomatis)\n", "")
+	fmt.Printf("%-35sPilih [1/2]: ", "")
+	fmt.Scan(&metode)
+
 	fmt.Printf("%-35sMasukkan User ID yang dicari: ", "")
 	fmt.Scan(&target)
-	for i := 0; i < n; i++ {
-		if A[i].UserID == target {
-			fmt.Printf("%-35s-> ID: %d | Nama: %s | Skor: %d | %s\n", "", A[i].ID, A[i].Nama, A[i].TotalSkor, A[i].Rekomendasi)
+
+	if metode == 1 {
+		cariSequential(A, n, target)
+	} else if metode == 2 {
+		// Binary search syaratnya data wajib terurut terlebih dahulu
+		// Kita urutkan salinan datanya agar data asli tidak teracak paksa
+		for i := 0; i < n-1; i++ {
+			minIdx := i
+			for j := i + 1; j < n; j++ {
+				if A[j].UserID < A[minIdx].UserID {
+					minIdx = j
+				}
+			}
+			A[i], A[minIdx] = A[minIdx], A[i]
 		}
+		cariBinary(A, n, target)
 	}
 	fmt.Printf("\n%-35sTekan Enter...", "")
 	fmt.Scanln()
 	fmt.Scanln()
 }
 
-func urutkanAssessment(A *DaftarAssessment, n int) {
-	//Urutkan dengan Selection Sort berdasarkan total skor terendah
+// ALGORITMA SEARCHING 1: SEQUENTIAL SEARCH
+func cariSequential(A DaftarAssessment, n int, target int) {
+	found := false
+	fmt.Printf("\n%-35s=== HASIL PENCERIAN (SEQUENTIAL) ===\n", "")
+	for i := 0; i < n; i++ {
+		if A[i].UserID == target {
+			fmt.Printf("%-35s-> ID: %d | Nama: %s | Skor: %d | %s\n", "", A[i].ID, A[i].Nama, A[i].TotalSkor, A[i].Rekomendasi)
+			found = true
+		}
+	}
+	if !found {
+		fmt.Printf("%-35sData User ID %d tidak ditemukan.\n", "", target)
+	}
+}
+
+// ALGORITMA SEARCHING 2: BINARY SEARCH
+func cariBinary(A DaftarAssessment, n int, target int) {
+	left := 0
+	right := n - 1
+	mid := -1
+	found := false
+
+	for left <= right && !found {
+		mid = (left + right) / 2
+		if A[mid].UserID == target {
+			found = true
+		} else if A[mid].UserID < target {
+			left = mid + 1
+		} else {
+			right = mid - 1
+		}
+	}
+
+	fmt.Printf("\n%-35s=== HASIL PENCERIAN (BINARY) ===\n", "")
+	if found {
+		fmt.Printf("%-35s-> ID: %d | Nama: %s | Skor: %d | %s\n", "", A[mid].ID, A[mid].Nama, A[mid].TotalSkor, A[mid].Rekomendasi)
+	} else {
+		fmt.Printf("%-35sData User ID %d tidak ditemukan.\n", "", target)
+	}
+}
+
+func menuPengurutan(A *DaftarAssessment, n int) {
+	var metode int
+	fmt.Printf("\n%-35sPilih Metode Pengurutan:\n", "")
+	fmt.Printf("%-35s[1] Selection Sort (Ascending berdasarkan Skor Terendah)\n", "")
+	fmt.Printf("%-35s[2] Insertion Sort (Descending berdasarkan Skor Tertinggi)\n", "")
+	fmt.Printf("%-35sPilih [1/2]: ", "")
+	fmt.Scan(&metode)
+
+	if metode == 1 {
+		urutSelectionAsc(A, n)
+	} else if metode == 2 {
+		urutInsertionDesc(A, n)
+	}
+	fmt.Printf("\n%-35sTekan Enter...", "")
+	fmt.Scanln()
+	fmt.Scanln()
+}
+
+// ALGORITMA SORTING 1: SELECTION SORT (ASCENDING - SKOR TERENDAH KE TERTINGGI)
+func urutSelectionAsc(A *DaftarAssessment, n int) {
 	for i := 0; i < n-1; i++ {
 		minIdx := i
 		for j := i + 1; j < n; j++ {
@@ -224,9 +301,22 @@ func urutkanAssessment(A *DaftarAssessment, n int) {
 		}
 		A[i], A[minIdx] = A[minIdx], A[i]
 	}
-	fmt.Printf("%-35sData berhasil diurutkan berdasarkan Skor!\n", "")
-	fmt.Printf("\n%-35sTekan Enter...", "")
-	fmt.Scanln()
+	fmt.Printf("%-35sData berhasil diurutkan dengan Selection Sort (Ascending)!\n", "")
+}
+
+// ALGORITMA SORTING 2: INSERTION SORT (DESCENDING - SKOR TERTINGGI KE TERENDAH)
+func urutInsertionDesc(A *DaftarAssessment, n int) {
+	for i := 1; i < n; i++ {
+		key := A[i]
+		j := i - 1
+		// Geser elemen yang lebih kecil dari key ke posisi kanan
+		for j >= 0 && A[j].TotalSkor < key.TotalSkor {
+			A[j+1] = A[j]
+			j--
+		}
+		A[j+1] = key
+	}
+	fmt.Printf("%-35sData berhasil diurutkan dengan Insertion Sort (Descending)!\n", "")
 }
 
 func menuLaporan(A DaftarAssessment, n int) {
